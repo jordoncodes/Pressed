@@ -1,0 +1,48 @@
+kit-give-height: 51
+build-limit: 48
+world: pressed
+cosmetic-shop-location:
+  ==: org.bukkit.Location
+  world: pressed
+  x: -8.5
+  y: 66.0
+  z: -1.5
+  pitch: 0.0
+  yaw: -135.0
+kit-editor-location:
+  ==: org.bukkit.Location
+  world: pressed
+  x: 3.5
+  y: 68.0
+  z: -13.5
+  pitch: 0.0
+  yaw: 45.0
+spawns:
+  - ==: org.bukkit.Location
+    world: pressed
+    x: -2.5
+    y: 66.0
+    z: -1.5
+    pitch: 0.0
+    yaw: 135.0
+#  - ==: org.bukkit.Location
+#    world: pressed
+#    x: -8.5
+#    y: 66.0
+#    z: -1.5
+#    pitch: 0.0
+#    yaw: -135
+  - ==: org.bukkit.Location
+    world: pressed
+    x: -8.5
+    y: 66.0
+    z: -7.5
+    pitch: 0.0
+    yaw: -45
+  - ==: org.bukkit.Location
+    world: pressed
+    x: -2.5
+    y: 66.0
+    z: -7.5
+    pitch: 0.0
+    yaw: 45.0

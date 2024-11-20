@@ -1,0 +1,6 @@
+name: Pressed
+version: '1.0-SNAPSHOT'
+main: me.onlyjordon.pressed.Pressed
+api-version: '1.21'
+load: POSTWORLD
+softdepend: ["PlaceholderAPI", "Citizens"]
