@@ -18,6 +18,10 @@ class BlocksPlacedQuest: Quest() {
 
     override fun checkRequirement(player: Player): Int {
         val user = UserManager.getUser(player.uniqueId)
+        if (!completeLevels.containsKey(player.uniqueId)) {
+            unload(player.uniqueId)
+            load(player.uniqueId)
+        }
         levels.filter { !completeLevels.containsEntry(player.uniqueId, it) }.forEach {
             if (user.blocksPlaced >= it) {
                 return levels.indexOf(it)

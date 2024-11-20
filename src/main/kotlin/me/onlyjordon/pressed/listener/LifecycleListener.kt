@@ -1,5 +1,7 @@
 package me.onlyjordon.pressed.listener
 
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
 import com.google.common.collect.HashMultimap
 import me.onlyjordon.pressed.cosmetics.shop.CosmeticShopGui
 import me.onlyjordon.pressed.fakerank.FakeRankManager
@@ -12,6 +14,7 @@ import me.onlyjordon.pressed.util.UsefulFunctions.plugin
 import net.citizensnpcs.api.event.NPCLeftClickEvent
 import net.citizensnpcs.api.event.NPCRightClickEvent
 import net.citizensnpcs.api.npc.NPC
+import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 import org.bukkit.Bukkit
 import org.bukkit.ChatColor
 import org.bukkit.GameMode
@@ -30,10 +33,13 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.*
 import org.bukkit.event.world.WorldSaveEvent
 import org.bukkit.inventory.ItemStack
+import java.time.Duration
 import java.util.*
 import kotlin.collections.HashMap
 
 class LifecycleListener: Listener {
+
+    val map: Cache<UUID, Long> = CacheBuilder.newBuilder().expireAfterWrite(Duration.ofSeconds(5)).build<UUID, Long>()
 
     @EventHandler
     fun onJoin(event: PlayerJoinEvent) {
@@ -43,6 +49,14 @@ class LifecycleListener: Listener {
         player.teleport(plugin.randomSpawnLocation)
         val user = UserManager.getUser(player.uniqueId)
         user.respawn()
+    }
+
+    @EventHandler
+    fun preJoin(event: AsyncPlayerPreLoginEvent) {
+        if (map.getIfPresent(event.uniqueId) != null) {
+            event.loginResult = AsyncPlayerPreLoginEvent.Result.KICK_OTHER
+            event.kickMessage(miniMessage().deserialize("<red>You are joining quickly! Please retry in 5 seconds!</red>"))
+        }
     }
 
     @EventHandler
@@ -89,6 +103,7 @@ class LifecycleListener: Listener {
         user.save()
         UserManager.clear(user)
         event.quitMessage = ChatColor.translateAlternateColorCodes('&', "&5[&c-&5] &d${player.name} left the game")
+        map.put(player.uniqueId, 0L)
     }
 
 

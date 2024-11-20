@@ -95,13 +95,9 @@ class User(val player: OfflinePlayer) {
 
         if (playerData.contains("death-messages"))
             deathMessagesEnabled = playerData.getBoolean("death-messages")
-
-
-        player.player?.let { player ->
-            plugin.killQuest.load(player)
-            plugin.blocksPlacedQuest.load(player)
-            plugin.killstreakQuest.load(player)
-        }
+        plugin.killQuest.load(player.uniqueId)
+        plugin.blocksPlacedQuest.load(player.uniqueId)
+        plugin.killstreakQuest.load(player.uniqueId)
     }
 
     fun save() {
@@ -124,11 +120,9 @@ class User(val player: OfflinePlayer) {
         playerData.set("ownedBlockCosmetics", ownedBlocks.map { it.name })
         playerData.set("death-messages", deathMessagesEnabled)
         playerData.save(playerDataFile)
-        player.player?.let { player ->
-            plugin.killQuest.unload(player)
-            plugin.blocksPlacedQuest.unload(player)
-            plugin.killstreakQuest.unload(player)
-        }
+        plugin.killQuest.unload(player.uniqueId)
+        plugin.blocksPlacedQuest.unload(player.uniqueId)
+        plugin.killstreakQuest.unload(player.uniqueId)
     }
 
     fun giveKit(): Boolean {

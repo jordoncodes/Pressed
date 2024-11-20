@@ -47,16 +47,17 @@ open abstract class Quest {
         }
     }
 
-    fun unload(player: Player) {
-        val lvls = completeLevels.get(player.uniqueId)
-        config.set("completed.${player.uniqueId}", lvls.toMutableList())
-        completeLevels.removeAll(player.uniqueId)
+    fun unload(player: UUID) {
+        val lvls = completeLevels.get(player)
+        if (lvls.isEmpty()) return
+        config.set("completed.${player}", lvls.toMutableList())
+        completeLevels.removeAll(player)
         config.save(file)
     }
 
-    fun load(player: Player) {
-        if (config.contains("completed.${player.uniqueId}")) {
-            completeLevels.putAll(player.uniqueId, config.getIntegerList("completed.${player.uniqueId}"))
+    fun load(player: UUID) {
+        if (config.contains("completed.${player}")) {
+            completeLevels.putAll(player, config.getIntegerList("completed.${player}"))
         }
     }
 }
