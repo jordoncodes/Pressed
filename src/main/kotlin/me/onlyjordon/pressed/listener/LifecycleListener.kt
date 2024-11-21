@@ -35,7 +35,7 @@ import org.bukkit.event.world.WorldSaveEvent
 import org.bukkit.inventory.ItemStack
 import java.time.Duration
 import java.util.*
-import kotlin.collections.HashMap
+import kotlin.math.ln
 
 class LifecycleListener: Listener {
 
@@ -229,7 +229,7 @@ class LifecycleListener: Listener {
                                             killMessages.random(),
                                             "you"
                                         )
-                                    }&d. &f[&5+${(10 * u1.killMultiplier).toInt()} xp &7/&5 +${(10 * u1.killMultiplier).toInt()} coins&f]&d."
+                                    }&d. &f[&5+${(10 * (ln(u1.killMultiplier) * plugin.currentGlobalBooster)).toInt()} xp &7/&5 +${(10 * (ln(u1.killMultiplier) * plugin.currentGlobalBooster)).toInt()} coins&f]&d."
                                 )
                             )
                             return@forEach

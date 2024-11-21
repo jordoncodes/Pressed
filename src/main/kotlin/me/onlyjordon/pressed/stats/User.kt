@@ -155,11 +155,11 @@ class User(val player: OfflinePlayer) {
         val pearl = StackBuilder(Material.ENDER_PEARL).maxStackSize(99).named(miniMessage().deserialize("<aqua>ENDER PEARL</aqua>")).build()
         val web = StackBuilder(Material.COBWEB).maxStackSize(99).named(miniMessage().deserialize("<white>COBWEB</white>")).build()
         kills++
-        xp+=(10 * (ln(killMultiplier)*plugin.currentGlobalBooster)).toInt()
-        coins += (10 * (ln(killMultiplier)*plugin.currentGlobalBooster)).toInt()
+        xp+=(10 * (ln(killMultiplier) * plugin.currentGlobalBooster)).toInt()
+        coins += (10 * (ln(killMultiplier) * plugin.currentGlobalBooster)).toInt()
         killstreak++
         if (killstreak % 2 == 0) {
-            killMultiplier+=0.2
+            killMultiplier+=1
         }
         if (killstreak % 5 == 0) {
             if (player.isOnline) {
