@@ -1,6 +1,5 @@
 package me.onlyjordon.pressed.stats
 
-import me.onlyjordon.pressed.util.UsefulFunctions.plugin
 import org.bukkit.Bukkit
 import java.util.*
 
@@ -16,7 +15,7 @@ object UserManager {
         var user = userMap[uniqueId]
         if (user == null) {
             user = User(Bukkit.getOfflinePlayer(uniqueId))
-            userMap.put(uniqueId, user)
+            userMap[uniqueId] = user
         }
         return user
     }
@@ -26,7 +25,13 @@ object UserManager {
     }
 
     fun clear(user: User) {
-        userMap.remove(user.player.uniqueId)
+        val uniqueId = user.player.uniqueId
+        clear(uniqueId)
+    }
+
+    fun clear(uniqueId: UUID) {
+        userMap[uniqueId]?.save()
+        userMap.remove(uniqueId)
     }
 
     fun count(): Int {

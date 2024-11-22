@@ -47,6 +47,7 @@ class LifecycleListener: Listener {
         event.joinMessage = ChatColor.translateAlternateColorCodes('&', "&5[&a+&5] &d${player.name} joined the game")
         FakeRankManager.resetFakeRank(player)
         player.teleport(plugin.randomSpawnLocation)
+        UserManager.clear(player.uniqueId)
         val user = UserManager.getUser(player.uniqueId)
         user.respawn()
     }
@@ -99,9 +100,7 @@ class LifecycleListener: Listener {
         val player = event.player
         BlockManager.removeAll(player.uniqueId)
         FakeRankManager.resetFakeRank(player)
-        val user = UserManager.getUser(player.uniqueId)
-        user.save()
-        UserManager.clear(user)
+        UserManager.clear(player.uniqueId)
         event.quitMessage = ChatColor.translateAlternateColorCodes('&', "&5[&c-&5] &d${player.name} left the game")
         map.put(player.uniqueId, 0L)
     }

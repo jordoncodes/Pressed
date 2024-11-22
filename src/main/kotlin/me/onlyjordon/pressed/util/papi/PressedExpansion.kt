@@ -45,7 +45,6 @@ class PressedExpansion: PlaceholderExpansion() {
                 s = player.name.toString()
             }
             if (!online) {
-                user.save()
                 UserManager.clear(user)
             }
             return s
