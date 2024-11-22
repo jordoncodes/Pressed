@@ -60,7 +60,7 @@ class BoardManager: Listener {
         val u = UserManager.getUser(board.player.uniqueId)
 
         val list = mutableListOf(color("&d&m----------------------"),
-            color("&5Players&f: &d" + Bukkit.getServer().onlinePlayers.size),
+            color("&5Players&f: &d" + Bukkit.getServer().onlinePlayers.count { board.player.canSee(it) }),
             "",
             color("&5K/D&7: &d" + NumberFormat.getNumberInstance().format(u.kills) + "&f/&d" + NumberFormat.getNumberInstance().format(u.deaths)),
             color("&5Streak&7: &d" + NumberFormat.getNumberInstance().format(u.killstreak) + " &f(&5" + NumberFormat.getNumberInstance().format(u.highestKillstreak) + "&f)"),
