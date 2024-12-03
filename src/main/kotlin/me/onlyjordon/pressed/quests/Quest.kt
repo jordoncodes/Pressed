@@ -15,6 +15,7 @@ open abstract class Quest {
     abstract val levels: List<Int>
     val completeLevels: HashMultimap<UUID, Int> = HashMultimap.create()
     abstract val name: String
+    open val isDaily = false
 
     lateinit var file: File
     lateinit var config: YamlConfiguration
@@ -30,6 +31,9 @@ open abstract class Quest {
 
     fun complete(player: Player, indexOfLevel: Int): Boolean {
         val user = UserManager.getUser(player.uniqueId)
+        if (completeLevels.get(player.uniqueId).isEmpty()) {
+            load(player)
+        }
         if (completeLevels.containsEntry(player.uniqueId, levels[indexOfLevel])) return false
         completeLevels.put(player.uniqueId, levels[indexOfLevel])
         val amt = (log(indexOfLevel.toDouble() + 2.0, 5.0) * 5).roundToLong()
@@ -43,21 +47,21 @@ open abstract class Quest {
         while (true) {
             var newLevel = checkRequirement(player)
             if (newLevel < 0) break
-            complete(player, newLevel)
+            if (!complete(player, newLevel)) return
         }
     }
 
-    fun unload(player: UUID) {
-        val lvls = completeLevels.get(player)
-        if (lvls.isEmpty()) return
-        config.set("completed.${player}", lvls.toMutableList())
-        completeLevels.removeAll(player)
+    fun unload(player: Player) {
+        if (completeLevels.get(player.uniqueId).isEmpty()) return
+        val lvls = completeLevels.get(player.uniqueId)
+        config.set("completed.${player.uniqueId}", lvls.toMutableList())
+        completeLevels.removeAll(player.uniqueId)
         config.save(file)
     }
 
-    fun load(player: UUID) {
-        if (config.contains("completed.${player}")) {
-            completeLevels.putAll(player, config.getIntegerList("completed.${player}"))
+    fun load(player: Player) {
+        if (config.contains("completed.${player.uniqueId}")) {
+            completeLevels.putAll(player.uniqueId, config.getIntegerList("completed.${player.uniqueId}"))
         }
     }
 }

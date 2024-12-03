@@ -36,8 +36,10 @@ class BlockListener: Listener {
             }
         }
         BlockManager.add(event.block, event.player.uniqueId)
+        UserManager.getUser(event.player.uniqueId).dailyBlocksPlaced++
         UserManager.getUser(event.player.uniqueId).blocksPlaced++
         plugin.blocksPlacedQuest.checkRequirementAndComplete(event.player)
+        plugin.dailyBlocksPlacedQuest.checkRequirementAndComplete(event.player)
     }
 
     @EventHandler

@@ -34,6 +34,9 @@ repositories {
     maven("https://maven.enginehub.org/repo/") {
         name = "worldedit"
     }
+    maven("https://repo.auroramc.gg/repository/maven-public/") {
+        name = "aurora"
+    }
 }
 
 dependencies {
@@ -51,6 +54,9 @@ dependencies {
     compileOnly("net.citizensnpcs:citizens-main:2.0.35-SNAPSHOT") {
         exclude(group = "*", module = "*")
     }
+    compileOnly("gg.auroramc:Aurora:2.0.6")
+    compileOnly("gg.auroramc:AuroraLevels:1.6.0")
+    compileOnly(files("libs/GadgetsMenu.jar"))
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.3.0")
 }
 

@@ -26,6 +26,9 @@ import me.onlyjordon.pressed.nick.NickListener
 import me.onlyjordon.pressed.quests.BlocksPlacedQuest
 import me.onlyjordon.pressed.quests.KillsQuest
 import me.onlyjordon.pressed.quests.KillstreakQuest
+import me.onlyjordon.pressed.quests.daily.DailyBlocksPlacedQuest
+import me.onlyjordon.pressed.quests.daily.DailyKillsQuest
+import me.onlyjordon.pressed.quests.daily.DailyKillstreakQuest
 import me.onlyjordon.pressed.quests.gui.QuestGui
 import me.onlyjordon.pressed.quests.gui.QuestGuiListener
 import me.onlyjordon.pressed.stats.UserManager
@@ -82,6 +85,12 @@ class Pressed : JavaPlugin() {
         private set
     lateinit var blocksPlacedQuest: BlocksPlacedQuest
         private set
+    lateinit var dailyKillQuest: DailyKillsQuest
+        private set
+    lateinit var dailyKillstreakQuest: DailyKillstreakQuest
+        private set
+    lateinit var dailyBlocksPlacedQuest: DailyBlocksPlacedQuest
+        private set
     lateinit var globalMultiConfigFile: File
         private set
     lateinit var globalMultiConfig: YamlConfiguration
@@ -117,9 +126,9 @@ class Pressed : JavaPlugin() {
 
     override fun onEnable() {
         CommandAPI.onEnable()
-        PacketEvents.getAPI().eventManager.registerListener(
-            NickListener(), PacketListenerPriority.NORMAL
-        )
+//        PacketEvents.getAPI().eventManager.registerListener(
+//            NickListener(), PacketListenerPriority.NORMAL
+//        )
         PacketEvents.getAPI().init()
         saveDefaultConfig()
         loadConfigValues()
@@ -135,6 +144,10 @@ class Pressed : JavaPlugin() {
         killQuest = KillsQuest()
         killstreakQuest = KillstreakQuest()
         blocksPlacedQuest = BlocksPlacedQuest()
+
+        dailyKillQuest = DailyKillsQuest()
+        dailyKillstreakQuest = DailyKillstreakQuest()
+        dailyBlocksPlacedQuest = DailyBlocksPlacedQuest()
 
         Bukkit.getOnlinePlayers().forEach {
             lifecycleListener.onJoin(PlayerJoinEvent(it, ""))
@@ -177,7 +190,7 @@ class Pressed : JavaPlugin() {
         Bukkit.getPluginManager().registerEvents(BlockListener(), this)
         Bukkit.getPluginManager().registerEvents(KitEditorListener(), this)
         Bukkit.getPluginManager().registerEvents(QuestGuiListener(), this)
-        Bukkit.getPluginManager().registerEvents(NickListener(), this)
+//        Bukkit.getPluginManager().registerEvents(NickListener(), this)
 
     }
 

@@ -1,5 +1,10 @@
 package me.onlyjordon.pressed.stats
 
+import com.google.common.cache.Cache
+import com.google.common.cache.CacheBuilder
+import com.google.common.cache.LoadingCache
+import com.yapzhenyie.GadgetsMenu.api.GadgetsMenuAPI
+import gg.auroramc.levels.api.AuroraLevelsProvider
 import me.onlyjordon.pressed.Pressed
 import me.onlyjordon.pressed.cosmetics.BlockType
 import me.onlyjordon.pressed.cosmetics.HelmetType
@@ -22,13 +27,14 @@ import org.bukkit.entity.Player
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
+import java.util.Calendar
 import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec
 import kotlin.math.ln
 
 class User(val player: OfflinePlayer) {
 
     var deathMessagesEnabled: Boolean = true
-    var killer: Player? = null
+    var killer: Pair<Player?,Long> = (null to System.currentTimeMillis())
     var killMultiplier = Math.E
     var sumoEventWins: Int = 0
     var coins = 0L
@@ -38,6 +44,12 @@ class User(val player: OfflinePlayer) {
     var deaths: Int = 0
     var xp: Long = 0
     var blocksPlaced = 0
+
+    var dailyKillstreak = 0
+    var dailyKills = 0
+    var dailyBlocksPlaced = 0
+
+    var day = 0
 
     val plugin = JavaPlugin.getPlugin(Pressed::class.java)
 
@@ -95,9 +107,16 @@ class User(val player: OfflinePlayer) {
 
         if (playerData.contains("death-messages"))
             deathMessagesEnabled = playerData.getBoolean("death-messages")
-        plugin.killQuest.load(player.uniqueId)
-        plugin.blocksPlacedQuest.load(player.uniqueId)
-        plugin.killstreakQuest.load(player.uniqueId)
+
+
+        player.player?.let { player ->
+            plugin.killQuest.load(player)
+            plugin.blocksPlacedQuest.load(player)
+            plugin.killstreakQuest.load(player)
+            plugin.dailyKillQuest.load(player)
+            plugin.dailyBlocksPlacedQuest.load(player)
+            plugin.dailyKillstreakQuest.load(player)
+        }
     }
 
     fun save() {
@@ -120,9 +139,14 @@ class User(val player: OfflinePlayer) {
         playerData.set("ownedBlockCosmetics", ownedBlocks.map { it.name })
         playerData.set("death-messages", deathMessagesEnabled)
         playerData.save(playerDataFile)
-        plugin.killQuest.unload(player.uniqueId)
-        plugin.blocksPlacedQuest.unload(player.uniqueId)
-        plugin.killstreakQuest.unload(player.uniqueId)
+        player.player?.let { player ->
+            plugin.killQuest.unload(player)
+            plugin.blocksPlacedQuest.unload(player)
+            plugin.killstreakQuest.unload(player)
+            plugin.dailyKillQuest.unload(player)
+            plugin.dailyBlocksPlacedQuest.unload(player)
+            plugin.dailyKillstreakQuest.unload(player)
+        }
     }
 
     fun giveKit(): Boolean {
@@ -134,6 +158,13 @@ class User(val player: OfflinePlayer) {
             if ((player.inventory.getItem(webSlot)?.type ?: Material.AIR) == Material.AIR)  player.inventory.setItem(webSlot, StackBuilder(Material.COBWEB).maxStackSize(99).named(miniMessage().deserialize("<white>COBWEB</white>")).build())
             player.inventory.armorContents = arrayOf(null, null, null, helmet.stack)
             return true
+        }
+        val oldDay = day
+        day = Calendar.getInstance().get(Calendar.DAY_OF_WEEK)
+        if (oldDay != day) {
+            dailyKills = 0
+            dailyKillstreak = 0
+            dailyBlocksPlaced = 0
         }
         return false
     }
@@ -155,11 +186,13 @@ class User(val player: OfflinePlayer) {
         val pearl = StackBuilder(Material.ENDER_PEARL).maxStackSize(99).named(miniMessage().deserialize("<aqua>ENDER PEARL</aqua>")).build()
         val web = StackBuilder(Material.COBWEB).maxStackSize(99).named(miniMessage().deserialize("<white>COBWEB</white>")).build()
         kills++
-        xp+=(10 * (ln(killMultiplier) * plugin.currentGlobalBooster)).toInt()
-        coins += (10 * (ln(killMultiplier) * plugin.currentGlobalBooster)).toInt()
+        dailyKills++
+        xp+=(10 * (ln(killMultiplier)*plugin.currentGlobalBooster)).toInt()
+        coins += (10 * (ln(killMultiplier)*plugin.currentGlobalBooster)).toInt()
         killstreak++
+        dailyKillstreak++
         if (killstreak % 2 == 0) {
-            killMultiplier+=1
+            killMultiplier+=0.2
         }
         if (killstreak % 5 == 0) {
             if (player.isOnline) {
@@ -190,6 +223,11 @@ class User(val player: OfflinePlayer) {
             }
         }
         highestKillstreak = highestKillstreak.coerceAtLeast(killstreak)
+
+        if ((0..200).random() == 200) {
+            GadgetsMenuAPI.getPlayerManager(player.player).addMysteryDust((50..2000).random() / 100)
+        }
+        AuroraLevelsProvider.getLeveler().addXpToPlayer(player.player, ((5..100).random() / 100).toDouble())
     }
 
     fun kill(killer: Player?) {
@@ -202,8 +240,9 @@ class User(val player: OfflinePlayer) {
         killerUser?.giveKillStats()
         deaths++
         killstreak = 0
+        dailyKillstreak = 0
         killMultiplier = Math.E
-        this.killer = null
+        this.killer = null to System.currentTimeMillis()
 
     }
 }

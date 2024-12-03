@@ -4,6 +4,7 @@ import fr.mrmicky.fastboard.FastBoard
 import me.onlyjordon.pressed.Pressed
 import me.onlyjordon.pressed.stats.UserManager
 import me.onlyjordon.pressed.util.UsefulFunctions.color
+import me.onlyjordon.pressed.util.UsefulFunctions.isInArena
 import org.bukkit.Bukkit
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
@@ -11,8 +12,8 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.text.NumberFormat
-import java.time.Duration
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 
 class BoardManager: Listener {
@@ -59,12 +60,18 @@ class BoardManager: Listener {
 
         val u = UserManager.getUser(board.player.uniqueId)
 
+        var statusMessage = "&aSafe"
+        if (isInArena(board.player.location)) statusMessage = "&fArena"
+        if (u.killer.second > System.currentTimeMillis()) {
+            statusMessage = "&cIn Combat: ${TimeUnit.MILLISECONDS.toSeconds(u.killer.second - System.currentTimeMillis())} seconds"
+        }
         val list = mutableListOf(color("&d&m----------------------"),
-            color("&5Players&f: &d" + Bukkit.getServer().onlinePlayers.count { board.player.canSee(it) }),
+            color("&5Players&f: &d" + Bukkit.getServer().onlinePlayers.size),
             "",
             color("&5K/D&7: &d" + NumberFormat.getNumberInstance().format(u.kills) + "&f/&d" + NumberFormat.getNumberInstance().format(u.deaths)),
             color("&5Streak&7: &d" + NumberFormat.getNumberInstance().format(u.killstreak) + " &f(&5" + NumberFormat.getNumberInstance().format(u.highestKillstreak) + "&f)"),
             color("&5Coins&7: &d" + NumberFormat.getNumberInstance().format(u.coins)),
+            color("&5Status&7: &d$statusMessage")
 //            color("&5XP&7: &d" + NumberFormat.getNumberInstance().format(u.xp))
         )
 

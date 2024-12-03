@@ -35,7 +35,7 @@ import org.bukkit.event.world.WorldSaveEvent
 import org.bukkit.inventory.ItemStack
 import java.time.Duration
 import java.util.*
-import kotlin.math.ln
+import kotlin.collections.HashMap
 
 class LifecycleListener: Listener {
 
@@ -47,7 +47,6 @@ class LifecycleListener: Listener {
         event.joinMessage = ChatColor.translateAlternateColorCodes('&', "&5[&a+&5] &d${player.name} joined the game")
         FakeRankManager.resetFakeRank(player)
         player.teleport(plugin.randomSpawnLocation)
-        UserManager.clear(player.uniqueId)
         val user = UserManager.getUser(player.uniqueId)
         user.respawn()
     }
@@ -100,7 +99,61 @@ class LifecycleListener: Listener {
         val player = event.player
         BlockManager.removeAll(player.uniqueId)
         FakeRankManager.resetFakeRank(player)
-        UserManager.clear(player.uniqueId)
+        val user = UserManager.getUser(player.uniqueId)
+        Bukkit.getServer().broadcastMessage("quitting")
+        if (user.killer.second > System.currentTimeMillis()) {
+            Bukkit.getServer().broadcastMessage("in combat")
+            user.killer.first?.let {
+                Bukkit.getServer().broadcastMessage("killer exists")
+                user.kill(it)
+                user.killer = null to System.currentTimeMillis()
+                player.killer = null
+                plugin.killQuest.checkRequirementAndComplete(it)
+                plugin.killstreakQuest.checkRequirementAndComplete(it)
+                plugin.dailyKillQuest.checkRequirementAndComplete(it)
+                plugin.dailyKillstreakQuest.checkRequirementAndComplete(it)
+                plugin.killQuest.checkRequirementAndComplete(player)
+                plugin.killstreakQuest.checkRequirementAndComplete(player)
+                plugin.dailyKillQuest.checkRequirementAndComplete(player)
+                plugin.dailyKillstreakQuest.checkRequirementAndComplete(player)
+                Bukkit.getOnlinePlayers().forEach { p ->
+                    val u1 = UserManager.getUser(p.uniqueId)
+                    if (u1.deathMessagesEnabled) {
+                        if (p == player) {
+                            p.sendMessage(
+                                ChatColor.translateAlternateColorCodes(
+                                    '&',
+                                    "&5You &dwere ${String.format(killMessages.random(), it.name)}&d."
+                                )
+                            )
+                            return@forEach
+                        }
+                        if (p == it) {
+                            p.sendMessage(
+                                ChatColor.translateAlternateColorCodes(
+                                    '&',
+                                    "&5${player.name} &dwas ${
+                                        String.format(
+                                            killMessages.random(),
+                                            "you"
+                                        )
+                                    }&d. &f[&5+${(10 * u1.killMultiplier).toInt()} xp &7/&5 +${(10 * u1.killMultiplier).toInt()} coins&f]&d."
+                                )
+                            )
+                            return@forEach
+                        }
+                        p.sendMessage(
+                            ChatColor.translateAlternateColorCodes(
+                                '&',
+                                "&5${player.name} &dwas ${String.format(killMessages.random(), it.name)}&d."
+                            )
+                        )
+                    }
+                }
+            }
+        }
+        user.save()
+        UserManager.clear(user)
         event.quitMessage = ChatColor.translateAlternateColorCodes('&', "&5[&c-&5] &d${player.name} left the game")
         map.put(player.uniqueId, 0L)
     }
@@ -198,15 +251,23 @@ class LifecycleListener: Listener {
                 it.remove()
             }
             playerPearls.removeAll(player.uniqueId)
-            (user.killer ?: player.killer)?.let {
+            user.killer.first?.let {
                 if (it == player) return
+                if (user.killer.second < System.currentTimeMillis()) {
+                    user.kill(null)
+                    return
+                }
                 user.kill(it)
-                user.killer = null
+                user.killer = null to System.currentTimeMillis()
                 player.killer = null
                 plugin.killQuest.checkRequirementAndComplete(it)
                 plugin.killstreakQuest.checkRequirementAndComplete(it)
+                plugin.dailyKillQuest.checkRequirementAndComplete(it)
+                plugin.dailyKillstreakQuest.checkRequirementAndComplete(it)
                 plugin.killQuest.checkRequirementAndComplete(player)
                 plugin.killstreakQuest.checkRequirementAndComplete(player)
+                plugin.dailyKillQuest.checkRequirementAndComplete(player)
+                plugin.dailyKillstreakQuest.checkRequirementAndComplete(player)
                 Bukkit.getOnlinePlayers().forEach { p ->
                     val u1 = UserManager.getUser(p.uniqueId)
                     if (u1.deathMessagesEnabled) {
@@ -228,7 +289,7 @@ class LifecycleListener: Listener {
                                             killMessages.random(),
                                             "you"
                                         )
-                                    }&d. &f[&5+${(10 * (ln(u1.killMultiplier) * plugin.currentGlobalBooster)).toInt()} xp &7/&5 +${(10 * (ln(u1.killMultiplier) * plugin.currentGlobalBooster)).toInt()} coins&f]&d."
+                                    }&d. &f[&5+${(10 * u1.killMultiplier).toInt()} xp &7/&5 +${(10 * u1.killMultiplier).toInt()} coins&f]&d."
                                 )
                             )
                             return@forEach
@@ -263,6 +324,8 @@ class LifecycleListener: Listener {
         event.damage = 0.0000000001
         player.health = player.getAttribute(Attribute.GENERIC_MAX_HEALTH)!!.value
         val user = UserManager.getUser(player.uniqueId)
-        user.killer = damager
+        user.killer = damager to System.currentTimeMillis() + 60000L
+        val user2 = UserManager.getUser(damager.uniqueId)
+        user2.killer = player to System.currentTimeMillis() + 60000L
     }
 }
