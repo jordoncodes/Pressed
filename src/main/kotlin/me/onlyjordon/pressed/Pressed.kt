@@ -238,6 +238,11 @@ class Pressed : JavaPlugin() {
             playerExecutor { player, args ->
                 val eventName: String = args.get("eventName") as String
                 val action: String = args.get("action") as String
+                val u = UserManager.getUser(player.uniqueId)
+                if (u.killer.second > System.currentTimeMillis()) {
+                    player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                    return@playerExecutor
+                }
                 if (eventName.equals("sumo", true)) {
                     if (action.equals("start", true) && player.hasPermission("pressed.events.start.sumo")) {
                         if (currentEvent?.hasEnded == false) {
