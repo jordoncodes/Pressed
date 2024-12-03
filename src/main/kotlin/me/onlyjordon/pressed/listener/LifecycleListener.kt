@@ -100,11 +100,8 @@ class LifecycleListener: Listener {
         BlockManager.removeAll(player.uniqueId)
         FakeRankManager.resetFakeRank(player)
         val user = UserManager.getUser(player.uniqueId)
-        Bukkit.getServer().broadcastMessage("quitting")
         if (user.killer.second > System.currentTimeMillis()) {
-            Bukkit.getServer().broadcastMessage("in combat")
             user.killer.first?.let {
-                Bukkit.getServer().broadcastMessage("killer exists")
                 user.kill(it)
                 user.killer = null to System.currentTimeMillis()
                 player.killer = null
