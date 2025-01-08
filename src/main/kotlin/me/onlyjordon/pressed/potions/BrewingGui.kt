@@ -14,17 +14,17 @@ import org.bukkit.potion.PotionType
 
 class BrewingGui(val user: User) {
     var potionEffects = mutableListOf(
-        PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, true, false) to 5,
-        PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, true, false) to 12,
-        PotionEffect(PotionEffectType.JUMP_BOOST, Integer.MAX_VALUE, 0, true, false) to 5,
-        PotionEffect(PotionEffectType.JUMP_BOOST, Integer.MAX_VALUE, 1, true, false) to 12,
-        PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, true, false) to 100,
+        PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 0, true, true) to 5,
+        PotionEffect(PotionEffectType.SPEED, Integer.MAX_VALUE, 1, true, true) to 12,
+        PotionEffect(PotionEffectType.JUMP_BOOST, Integer.MAX_VALUE, 0, true, true) to 5,
+        PotionEffect(PotionEffectType.JUMP_BOOST, Integer.MAX_VALUE, 1, true, true) to 12,
+        PotionEffect(PotionEffectType.INVISIBILITY, Integer.MAX_VALUE, 0, true, true) to 100,
 
-        PotionEffect(PotionEffectType.SPEED, 2400, 0, true, false) to 2,
-        PotionEffect(PotionEffectType.SPEED, 2400, 1, true, false) to 5,
-        PotionEffect(PotionEffectType.JUMP_BOOST, 2400, 0, true, false) to 2,
-        PotionEffect(PotionEffectType.JUMP_BOOST, 2400, 1, true, false) to 5,
-        PotionEffect(PotionEffectType.INVISIBILITY, 2400, 0, true, false) to 18,
+        PotionEffect(PotionEffectType.SPEED, 2400, 0, true, true) to 2,
+        PotionEffect(PotionEffectType.SPEED, 2400, 1, true, true) to 5,
+        PotionEffect(PotionEffectType.JUMP_BOOST, 2400, 0, true, true) to 2,
+        PotionEffect(PotionEffectType.JUMP_BOOST, 2400, 1, true, true) to 5,
+        PotionEffect(PotionEffectType.INVISIBILITY, 2400, 0, true, true) to 18,
     )
 
     var activePotions = mutableListOf<Pair<PotionEffect, Int>>()
@@ -46,7 +46,6 @@ class BrewingGui(val user: User) {
             activePotions.add(potionEffects.random())
             potionEffects.clear()
             activePotions.forEachIndexed { index, (effect, cost) ->
-                println("potion $effect")
                 val seconds: Long = (effect.duration / 20).toLong()
                 val DD: Long = seconds / 86400
                 val HH: Long = (seconds % 86400) / 3600
