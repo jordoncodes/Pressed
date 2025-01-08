@@ -63,19 +63,21 @@ class BoardManager: Listener {
         var statusMessage = "&aSafe"
         if (isInArena(board.player.location)) statusMessage = "&fArena"
         if (u.killer.second > System.currentTimeMillis()) {
-            statusMessage = "&cIn Combat: ${TimeUnit.MILLISECONDS.toSeconds(u.killer.second - System.currentTimeMillis())} seconds"
+            statusMessage = "&cCombat (${TimeUnit.MILLISECONDS.toSeconds(u.killer.second - System.currentTimeMillis())}s)"
         }
         val list = mutableListOf(color("&d&m----------------------"),
             color("&5Players&f: &d" + Bukkit.getServer().onlinePlayers.size),
             "",
             color("&5K/D&7: &d" + NumberFormat.getNumberInstance().format(u.kills) + "&f/&d" + NumberFormat.getNumberInstance().format(u.deaths)),
             color("&5Streak&7: &d" + NumberFormat.getNumberInstance().format(u.killstreak) + " &f(&5" + NumberFormat.getNumberInstance().format(u.highestKillstreak) + "&f)"),
-            color("&5Coins&7: &d" + NumberFormat.getNumberInstance().format(u.coins)),
-            color("&5Status&7: &d$statusMessage")
+            color("&5Coins&7: &d" + NumberFormat.getNumberInstance().format(u.coins))
 //            color("&5XP&7: &d" + NumberFormat.getNumberInstance().format(u.xp))
         )
 
-
+        if (u.blazeDust > 0) {
+            list.add(color("&5Blaze Dust&7: &d" + NumberFormat.getNumberInstance().format(u.blazeDust)))
+        }
+        list.add(color("&d$statusMessage"))
 
         if (plugin.currentGlobalBooster > 1 && plugin.boosterManager.activeBoosters.size > 0) {
             val seconds: Long = plugin.boosterManager.activeBooster.remainingTime / 1000

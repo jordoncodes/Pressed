@@ -1,7 +1,6 @@
 package me.onlyjordon.pressed
 
 import com.github.retrooper.packetevents.PacketEvents
-import com.github.retrooper.packetevents.event.PacketListenerPriority
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIBukkitConfig
 import dev.jorel.commandapi.CommandPermission
@@ -16,13 +15,13 @@ import me.onlyjordon.pressed.cosmetics.HelmetType
 import me.onlyjordon.pressed.cosmetics.StickType
 import me.onlyjordon.pressed.cosmetics.gui.CosmeticGui
 import me.onlyjordon.pressed.events.Event
-import me.onlyjordon.pressed.events.sumo.SumoEvent
+import me.onlyjordon.pressed.events.tntrun.TntRunEvent
 import me.onlyjordon.pressed.globalboosters.BoosterDataManager
 import me.onlyjordon.pressed.globalboosters.BoosterManager
 import me.onlyjordon.pressed.listener.BlockListener
 import me.onlyjordon.pressed.listener.KitEditorListener
 import me.onlyjordon.pressed.listener.LifecycleListener
-import me.onlyjordon.pressed.nick.NickListener
+import me.onlyjordon.pressed.potions.BrewingListener
 import me.onlyjordon.pressed.quests.BlocksPlacedQuest
 import me.onlyjordon.pressed.quests.KillsQuest
 import me.onlyjordon.pressed.quests.KillstreakQuest
@@ -45,6 +44,7 @@ import net.kyori.adventure.text.format.TextColor
 import net.kyori.adventure.text.minimessage.MiniMessage.miniMessage
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.*
+import org.bukkit.block.BlockFace
 import org.bukkit.command.CommandSender
 import org.bukkit.configuration.file.YamlConfiguration
 import org.bukkit.entity.EntityType
@@ -57,6 +57,8 @@ import java.io.File
 
 
 class Pressed : JavaPlugin() {
+    lateinit var gameLoop: GameLoop
+        private set
     lateinit var world: World
         private set
     lateinit var kitEditorLocation: Location
@@ -161,6 +163,7 @@ class Pressed : JavaPlugin() {
         boosterDataManager.loadBoosters(boosterManager.activeBoosters)
         boosterManager.startBoosterCleanupTask()
         boosterManager.applyActiveBoosters()
+        Bukkit.getPluginManager().registerEvents(BrewingListener(), this)
     }
 
     override fun onDisable() {
@@ -210,6 +213,21 @@ class Pressed : JavaPlugin() {
 
     var currentEvent: Event? = null
 
+    fun inWebs(p: Player): Boolean {
+        if ((p.location.block != null && p.location.block.type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.UP) != null && p.location.block.getRelative(BlockFace.UP).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.EAST) != null && p.location.block.getRelative(BlockFace.EAST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.NORTH) != null && p.location.block.getRelative(BlockFace.NORTH).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.SOUTH) != null && p.location.block.getRelative(BlockFace.SOUTH).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.WEST) != null && p.location.block.getRelative(BlockFace.WEST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.NORTH_EAST) != null && p.location.block.getRelative(BlockFace.NORTH_EAST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.NORTH_WEST) != null && p.location.block.getRelative(BlockFace.NORTH_WEST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.SOUTH_EAST) != null && p.location.block.getRelative(BlockFace.SOUTH_EAST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.SOUTH_WEST) != null && p.location.block.getRelative(BlockFace.SOUTH_WEST).type == Material.COBWEB)
+        ) return true
+        return false
+    }
+
     fun registerCommands() {
         TeleportCommands.register()
         GamemodeCommands.register()
@@ -239,24 +257,36 @@ class Pressed : JavaPlugin() {
                 val eventName: String = args.get("eventName") as String
                 val action: String = args.get("action") as String
                 val u = UserManager.getUser(player.uniqueId)
-                if (u.killer.second > System.currentTimeMillis()) {
-                    player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
-                    return@playerExecutor
-                }
                 if (eventName.equals("sumo", true)) {
                     if (action.equals("start", true) && player.hasPermission("pressed.events.start.sumo")) {
                         if (currentEvent?.hasEnded == false) {
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cAn event is already running!"))
                             return@playerExecutor
                         }
-                        currentEvent = SumoEvent()
-                        (currentEvent as SumoEvent).start()
-                        Bukkit.getPluginManager().registerEvents(currentEvent as SumoEvent, this@Pressed)
+                        currentEvent = TntRunEvent()
+                        (currentEvent as TntRunEvent).start()
+                        Bukkit.getPluginManager().registerEvents(currentEvent as TntRunEvent, this@Pressed)
                     }
                     if (action.equals("quit", true) || action.equals("leave", true)) {
-                        (currentEvent as? SumoEvent)?.quit(player)
+                        if (u.killer.second > System.currentTimeMillis()) {
+                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                            return@playerExecutor
+                        }
+                        (currentEvent as? TntRunEvent)?.quit(player)
                     }
                     if (action.equals("join", true)) {
+                        if (u.killer.second - 54000 > System.currentTimeMillis()) {
+                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                            return@playerExecutor
+                        }
+                        if (inWebs(player)) {
+                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                            return@playerExecutor
+                        }
+                        if (player.location.y < 13) {
+                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                            return@playerExecutor
+                        }
                         if (currentEvent?.hasEnded == true) {
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has ended!"))
                             return@playerExecutor
@@ -265,13 +295,14 @@ class Pressed : JavaPlugin() {
                             player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has already started!"))
                             return@playerExecutor
                         }
-                        (currentEvent as? SumoEvent)?.join(player)
+                        (currentEvent as? TntRunEvent)?.join(player)
                         player.inventory.clear()
                         player.inventory.setItemInOffHand(ItemStack(Material.AIR))
                     }
                 }
             }
         }
+
 
         commandAPICommand("bc") {
             aliases = arrayOf("broadcast")
@@ -413,6 +444,7 @@ class Pressed : JavaPlugin() {
     }
 
     fun startTasks() {
-        GameLoop().runTaskTimer(this, 5L, 5L)
+        this.gameLoop = GameLoop()
+        gameLoop.runTaskTimer(this, 5L, 5L)
     }
 }

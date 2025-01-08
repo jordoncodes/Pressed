@@ -30,6 +30,7 @@ import java.io.File
 import java.util.Calendar
 import javax.xml.crypto.dsig.spec.ExcC14NParameterSpec
 import kotlin.math.ln
+import kotlin.math.roundToLong
 
 class User(val player: OfflinePlayer) {
 
@@ -37,6 +38,7 @@ class User(val player: OfflinePlayer) {
     var killer: Pair<Player?,Long> = (null to System.currentTimeMillis())
     var killMultiplier = Math.E
     var sumoEventWins: Int = 0
+    var tntRunEventWins: Int = 0
     var coins = 0L
     var highestKillstreak: Int = 0
     var killstreak: Int = 0
@@ -44,6 +46,7 @@ class User(val player: OfflinePlayer) {
     var deaths: Int = 0
     var xp: Long = 0
     var blocksPlaced = 0
+    var blazeDust = 0L
 
     var dailyKillstreak = 0
     var dailyKills = 0
@@ -94,7 +97,9 @@ class User(val player: OfflinePlayer) {
         deaths = playerData.getInt("deaths")
         xp = playerData.getLong("xp")
         coins = playerData.getLong("coins")
+        blazeDust = playerData.getLong("blaze-dust")
         sumoEventWins = playerData.getInt("sumo-event-wins")
+        tntRunEventWins = playerData.getInt("tnt-run-event-wins")
         blocksPlaced = playerData.getInt("blocks-placed")
             if (playerData.contains("stickSlot"))
             stickSlot = playerData.getInt("stickSlot")
@@ -128,8 +133,10 @@ class User(val player: OfflinePlayer) {
         playerData.set("deaths", deaths)
         playerData.set("xp", xp)
         playerData.set("coins", coins)
+        playerData.set("blaze-dust", blazeDust)
         playerData.set("blocks-placed", blocksPlaced)
         playerData.set("sumo-event-wins", sumoEventWins)
+        playerData.set("tnt-run-event-wins", tntRunEventWins)
         playerData.set("stickSlot", stickSlot)
         playerData.set("blockSlot", blockSlot)
         playerData.set("pearlSlot", pearlSlot)
@@ -222,12 +229,30 @@ class User(val player: OfflinePlayer) {
                 }
             }
         }
+
+        // 50% chance
+        if ((0..100).random() > 49) {
+            blazeDust+=plugin.currentGlobalBooster.roundToLong()
+            if (player.isOnline) {
+                (player as Player).sendMessage(
+                    miniMessage().deserialize(
+                        "<light_purple>You received <gray>${
+                            if (plugin.currentGlobalBooster == 1.0) "a" else plugin.currentGlobalBooster.roundToLong().toString() + "x"
+                        } blaze dust</gray> from a kill!"
+                    ))
+            }
+        }
         highestKillstreak = highestKillstreak.coerceAtLeast(killstreak)
 
-        if ((0..200).random() == 200) {
-            GadgetsMenuAPI.getPlayerManager(player.player).addMysteryDust((50..2000).random() / 100)
+        if (!player.isOnline) {
+            save()
+            UserManager.clear(this)
+            return
         }
-        AuroraLevelsProvider.getLeveler().addXpToPlayer(player.player, ((5..100).random() / 100).toDouble())
+//        if ((0..200).random() == 200) {
+//            GadgetsMenuAPI.getPlayerManager(player.player).addMysteryDust((50..2000).random() / 100)
+//        }
+//        AuroraLevelsProvider.getLeveler().addXpToPlayer(player.player, ((5..100).random() / 100).toDouble())
     }
 
     fun kill(killer: Player?) {
@@ -242,6 +267,9 @@ class User(val player: OfflinePlayer) {
         killstreak = 0
         dailyKillstreak = 0
         killMultiplier = Math.E
+        if (player.isOnline) {
+            (player as Player).clearActivePotionEffects()
+        }
         this.killer = null to System.currentTimeMillis()
 
     }
