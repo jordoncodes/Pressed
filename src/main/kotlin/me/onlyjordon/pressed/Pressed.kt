@@ -15,6 +15,7 @@ import me.onlyjordon.pressed.cosmetics.HelmetType
 import me.onlyjordon.pressed.cosmetics.StickType
 import me.onlyjordon.pressed.cosmetics.gui.CosmeticGui
 import me.onlyjordon.pressed.events.Event
+import me.onlyjordon.pressed.events.sumo.SumoEvent
 import me.onlyjordon.pressed.events.tntrun.TntRunEvent
 import me.onlyjordon.pressed.globalboosters.BoosterDataManager
 import me.onlyjordon.pressed.globalboosters.BoosterManager
@@ -54,6 +55,7 @@ import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
 import java.io.File
+import java.text.NumberFormat
 
 
 class Pressed : JavaPlugin() {
@@ -250,56 +252,87 @@ class Pressed : JavaPlugin() {
 
         commandAPICommand("event") {
             arguments(
-                StringArgument("eventName").replaceSuggestions(ArgumentSuggestions.strings("sumo")),
+                StringArgument("eventName").replaceSuggestions(ArgumentSuggestions.strings("sumo", "tnt-run")),
                 StringArgument("action").replaceSuggestions(ArgumentSuggestions.strings("join", "start", "quit", "leave"))
             )
             playerExecutor { player, args ->
                 val eventName: String = args.get("eventName") as String
                 val action: String = args.get("action") as String
                 val u = UserManager.getUser(player.uniqueId)
-                if (eventName.equals("sumo", true)) {
-                    if (action.equals("start", true) && player.hasPermission("pressed.events.start.sumo")) {
-                        if (currentEvent?.hasEnded == false) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cAn event is already running!"))
-                            return@playerExecutor
-                        }
+                if (action.equals("start", true) && player.hasPermission("pressed.events.start.sumo")) {
+                    if (currentEvent?.hasEnded == false) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cAn event is already running!"))
+                        return@playerExecutor
+                    }
+                    if (eventName.equals("tnt-run", true)) {
                         currentEvent = TntRunEvent()
                         (currentEvent as TntRunEvent).start()
                         Bukkit.getPluginManager().registerEvents(currentEvent as TntRunEvent, this@Pressed)
                     }
-                    if (action.equals("quit", true) || action.equals("leave", true)) {
-                        if (u.killer.second > System.currentTimeMillis()) {
-                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
-                            return@playerExecutor
-                        }
-                        (currentEvent as? TntRunEvent)?.quit(player)
-                    }
-                    if (action.equals("join", true)) {
-                        if (u.killer.second - 54000 > System.currentTimeMillis()) {
-                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
-                            return@playerExecutor
-                        }
-                        if (inWebs(player)) {
-                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
-                            return@playerExecutor
-                        }
-                        if (player.location.y < 13) {
-                            player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
-                            return@playerExecutor
-                        }
-                        if (currentEvent?.hasEnded == true) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has ended!"))
-                            return@playerExecutor
-                        }
-                        if (currentEvent?.hasStarted == true) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has already started!"))
-                            return@playerExecutor
-                        }
-                        (currentEvent as? TntRunEvent)?.join(player)
-                        player.inventory.clear()
-                        player.inventory.setItemInOffHand(ItemStack(Material.AIR))
+                    if (eventName.equals("sumo", true)) {
+                        currentEvent = SumoEvent()
+                        (currentEvent as SumoEvent).start()
+                        Bukkit.getPluginManager().registerEvents(currentEvent as SumoEvent, this@Pressed)
                     }
                 }
+                if (action.equals("quit", true) || action.equals("leave", true)) {
+                    if (u.killer.second > System.currentTimeMillis()) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
+                    }
+                    (currentEvent as? SumoEvent)?.quit(player)
+                    (currentEvent as? TntRunEvent)?.quit(player)
+                }
+                if (action.equals("join", true)) {
+                    if (u.killer.second - 52000 > System.currentTimeMillis()) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
+                    }
+                    if (inWebs(player)) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
+                    }
+                    if (player.location.y < 13) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
+                    }
+                    if (currentEvent?.hasEnded == true) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has ended!"))
+                        return@playerExecutor
+                    }
+                    if (currentEvent?.hasStarted == true) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has already started!"))
+                        return@playerExecutor
+                    }
+                    (currentEvent as? SumoEvent)?.join(player)
+                    (currentEvent as? TntRunEvent)?.join(player)
+                    player.inventory.clear()
+                    player.inventory.setItemInOffHand(ItemStack(Material.AIR))
+                }
+            }
+        }
+
+        commandAPICommand("pay") {
+            aliases = arrayOf("paycoins", "donatecoins")
+            playerArgument("player")
+            longArgument("amount")
+            playerExecutor { executor, args ->
+                val player = args.get("player") as Player
+                val receiver = UserManager.getUser(player.uniqueId)
+                val sender = UserManager.getUser(executor.uniqueId)
+                val amount = args.get("amount") as Long
+                if (amount < 1) {
+                    executor.sendMessage(ChatColor.RED.toString() + "Amount must be greater than 0!")
+                    return@playerExecutor
+                }
+                if (sender.coins < amount) {
+                    executor.sendMessage(ChatColor.RED.toString() + "You don't have enough coins!")
+                    return@playerExecutor
+                }
+                sender.coins -= amount
+                receiver.coins += amount
+                player.sendMessage(miniMessage().deserialize("<green>You have received <white>${NumberFormat.getNumberInstance().format(amount)} coins</white> from <white>${executor.name}</white>!"))
+                executor.sendMessage(miniMessage().deserialize("<green>You have sent <white>${NumberFormat.getNumberInstance().format(amount)} coins</white> to <white>${player.name}</white>!"))
             }
         }
 

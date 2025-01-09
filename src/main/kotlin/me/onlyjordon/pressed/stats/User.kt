@@ -231,7 +231,7 @@ class User(val player: OfflinePlayer) {
         }
 
         // 50% chance
-        if ((0..100).random() > 49) {
+        if ((0..100).random() >= 99) {
             blazeDust+=plugin.currentGlobalBooster.roundToLong()
             if (player.isOnline) {
                 (player as Player).sendMessage(

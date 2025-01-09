@@ -43,8 +43,8 @@ abstract class Event {
     fun endEvent() {
         hasEnded = true
         win(currentWinners)
-        players.forEach {
-            UserManager.getUser(it.uniqueId).respawn()
+        ArrayList<Player>(players).forEach {
+            quit(it)
         }
         if (this is Listener) {
             HandlerList.unregisterAll(this)
