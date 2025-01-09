@@ -14,16 +14,15 @@ class GameLoop: BukkitRunnable() {
 
     }
 
-    var savedHour = 25
+    var savedTime = System.currentTimeMillis()
 
     override fun run() {
 //        BlockManager.getBlocks().forEach { block ->
 //            block.key.world.spawnParticle(Particle.DUST, block.key.clone().add(0.5, 2.0, 0.5), 1, 0.0, 0.0, 0.0, 1.0, Particle.DustOptions(Color.RED, 5.0f))
 //        }
-        val cal = Calendar.getInstance()
-        val hour = cal.get(Calendar.HOUR_OF_DAY)
-        if (hour != savedHour) {
-            savedHour = hour
+        val time = System.currentTimeMillis()
+        if (time - savedTime > 3600000) {
+            savedTime = System.currentTimeMillis()
             plugin.regenerateShopItems()
         }
     }

@@ -5,6 +5,7 @@ import me.onlyjordon.pressed.stats.UserManager
 import me.onlyjordon.pressed.util.UsefulFunctions
 import org.bukkit.ChatColor
 import org.bukkit.OfflinePlayer
+import java.util.concurrent.TimeUnit
 
 class PressedExpansion: PlaceholderExpansion() {
     override fun getIdentifier(): String {
@@ -72,7 +73,30 @@ class PressedExpansion: PlaceholderExpansion() {
                     s = ChatColor.RED.toString() + "Current Owner: No one!"
                 }
             }
-
+            if (params == "shop-timer") {
+                val savedHour = UsefulFunctions.plugin.gameLoop.savedTime
+                val elapsed = System.currentTimeMillis() - savedHour
+                val countdownMillis = TimeUnit.MINUTES.toMillis(60)
+                val remainingMillis = countdownMillis - elapsed
+                val mins = TimeUnit.MILLISECONDS.toMinutes(remainingMillis)
+                var time = ""
+                if (mins <= 0) {
+                    time = String.format(
+                        "%dmin, %dsec",
+                        TimeUnit.MILLISECONDS.toMinutes(remainingMillis),
+                        TimeUnit.MILLISECONDS.toSeconds(remainingMillis) -
+                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(remainingMillis))
+                    )
+                } else {
+                    time = String.format(
+                        "%d min, %d sec",
+                        TimeUnit.MILLISECONDS.toMinutes(remainingMillis),
+                        TimeUnit.MILLISECONDS.toSeconds(remainingMillis) -
+                                TimeUnit.MINUTES.toSeconds(TimeUnit.MILLISECONDS.toMinutes(remainingMillis))
+                    )
+                }
+                s = time
+            }
             if (!online) {
                 user.save()
                 UserManager.clear(user)

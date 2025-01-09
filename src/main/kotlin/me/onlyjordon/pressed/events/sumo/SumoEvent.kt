@@ -1,6 +1,7 @@
 package me.onlyjordon.pressed.events.sumo
 
 import me.onlyjordon.pressed.events.Event
+import me.onlyjordon.pressed.events.tntrun.TntRunEvent
 import me.onlyjordon.pressed.stats.UserManager
 import me.onlyjordon.pressed.util.UsefulFunctions.plugin
 import net.md_5.bungee.api.ChatColor
@@ -148,7 +149,7 @@ class SumoEvent : Event(), Listener {
             user.coins+=(250 * plugin.currentGlobalBooster).toLong()
             user.xp+=(250 * plugin.currentGlobalBooster).toLong()
             user.sumoEventWins++
-            it.sendMessage(ChatColor.translateAlternateColorCodes('&', "&dYou have won the &5$name &devent! &5+250&e Coins &dand &5+250xp"))
+            it.sendMessage(ChatColor.translateAlternateColorCodes('&', "&dYou have won the &5$name &devent! &5+${250 * plugin.currentGlobalBooster}&e Coins &dand &5+${250 * plugin.currentGlobalBooster}xp"))
         }
         Bukkit.getServer().broadcastMessage(ChatColor.translateAlternateColorCodes('&', "&5$name &devent is over! Winner: ${players.stream().map { it.name }.collect(Collectors.joining(", "))}"))
     }
@@ -193,7 +194,7 @@ class SumoEvent : Event(), Listener {
                 return
             }
             sumoEvent.players.forEach {
-                it.sendTitle(ChatColor.translateAlternateColorCodes('&', "&5Sumo &dstarting in"), ChatColor.translateAlternateColorCodes('&', "&5$i &dseconds..."), 0, 40, 0)
+                it.sendTitle(ChatColor.translateAlternateColorCodes('&', "&5${sumoEvent.name} &dstarting in"), ChatColor.translateAlternateColorCodes('&', "&5$i &dseconds..."), 0, 40, 0)
             }
         }
 

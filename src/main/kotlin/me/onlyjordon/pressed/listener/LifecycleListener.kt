@@ -326,6 +326,6 @@ class LifecycleListener: Listener {
         val user = UserManager.getUser(player.uniqueId)
         user.killer = damager to System.currentTimeMillis() + 60000L
         val user2 = UserManager.getUser(damager.uniqueId)
-        user2.killer = player to System.currentTimeMillis() + 60000L
+        user2.killer = user2.killer.first to System.currentTimeMillis() + 60000L
     }
 }

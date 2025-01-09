@@ -59,6 +59,8 @@ import java.io.File
 
 
 class Pressed : JavaPlugin() {
+    lateinit var gameLoop: GameLoop
+        private set
     lateinit var world: World
         private set
     lateinit var kitEditorLocation: Location
@@ -164,7 +166,7 @@ class Pressed : JavaPlugin() {
         boosterDataManager.loadBoosters(boosterManager.activeBoosters)
         boosterManager.startBoosterCleanupTask()
         boosterManager.applyActiveBoosters()
-
+        Bukkit.getPluginManager().registerEvents(BrewingListener(), this)
         val region = CuboidRegion(BlockVector3.at(32, 21, -8), BlockVector3.at(40,28,0))
         kothArea = KothArea(region)
         kothArea.isActive = true
@@ -222,6 +224,21 @@ class Pressed : JavaPlugin() {
 
     var currentEvent: Event? = null
 
+    fun inWebs(p: Player): Boolean {
+        if ((p.location.block != null && p.location.block.type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.UP) != null && p.location.block.getRelative(BlockFace.UP).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.EAST) != null && p.location.block.getRelative(BlockFace.EAST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.NORTH) != null && p.location.block.getRelative(BlockFace.NORTH).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.SOUTH) != null && p.location.block.getRelative(BlockFace.SOUTH).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.WEST) != null && p.location.block.getRelative(BlockFace.WEST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.NORTH_EAST) != null && p.location.block.getRelative(BlockFace.NORTH_EAST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.NORTH_WEST) != null && p.location.block.getRelative(BlockFace.NORTH_WEST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.SOUTH_EAST) != null && p.location.block.getRelative(BlockFace.SOUTH_EAST).type == Material.COBWEB)
+            || (p.location.block.getRelative(BlockFace.SOUTH_WEST) != null && p.location.block.getRelative(BlockFace.SOUTH_WEST).type == Material.COBWEB)
+        ) return true
+        return false
+    }
+
     fun registerCommands() {
         TeleportCommands.register()
         GamemodeCommands.register()
@@ -244,46 +261,90 @@ class Pressed : JavaPlugin() {
 
         commandAPICommand("event") {
             arguments(
-                StringArgument("eventName").replaceSuggestions(ArgumentSuggestions.strings("sumo")),
+                StringArgument("eventName").replaceSuggestions(ArgumentSuggestions.strings("sumo", "tnt-run")),
                 StringArgument("action").replaceSuggestions(ArgumentSuggestions.strings("join", "start", "quit", "leave"))
             )
             playerExecutor { player, args ->
                 val eventName: String = args.get("eventName") as String
                 val action: String = args.get("action") as String
                 val u = UserManager.getUser(player.uniqueId)
-                if (u.killer.second > System.currentTimeMillis()) {
-                    player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
-                    return@playerExecutor
-                }
-                if (eventName.equals("sumo", true)) {
-                    if (action.equals("start", true) && player.hasPermission("pressed.events.start.sumo")) {
-                        if (currentEvent?.hasEnded == false) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cAn event is already running!"))
-                            return@playerExecutor
-                        }
+                if (action.equals("start", true) && player.hasPermission("pressed.events.start.sumo")) {
+                    if (currentEvent?.hasEnded == false) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cAn event is already running!"))
+                        return@playerExecutor
+                    }
+                    if (eventName.equals("tnt-run", true)) {
+                        currentEvent = TntRunEvent()
+                        (currentEvent as TntRunEvent).start()
+                        Bukkit.getPluginManager().registerEvents(currentEvent as TntRunEvent, this@Pressed)
+                    }
+                    if (eventName.equals("sumo", true)) {
                         currentEvent = SumoEvent()
                         (currentEvent as SumoEvent).start()
                         Bukkit.getPluginManager().registerEvents(currentEvent as SumoEvent, this@Pressed)
                     }
-                    if (action.equals("quit", true) || action.equals("leave", true)) {
-                        (currentEvent as? SumoEvent)?.quit(player)
+                }
+                if (action.equals("quit", true) || action.equals("leave", true)) {
+                    if (u.killer.second > System.currentTimeMillis()) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
                     }
-                    if (action.equals("join", true)) {
-                        if (currentEvent?.hasEnded == true) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has ended!"))
-                            return@playerExecutor
-                        }
-                        if (currentEvent?.hasStarted == true) {
-                            player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has already started!"))
-                            return@playerExecutor
-                        }
-                        (currentEvent as? SumoEvent)?.join(player)
-                        player.inventory.clear()
-                        player.inventory.setItemInOffHand(ItemStack(Material.AIR))
+                    (currentEvent as? SumoEvent)?.quit(player)
+                    (currentEvent as? TntRunEvent)?.quit(player)
+                }
+                if (action.equals("join", true)) {
+                    if (u.killer.second - 52000 > System.currentTimeMillis()) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
                     }
+                    if (inWebs(player)) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
+                    }
+                    if (player.location.y < 13) {
+                        player.sendMessage(ChatColor.RED.toString() + "You can't do this in combat!")
+                        return@playerExecutor
+                    }
+                    if (currentEvent?.hasEnded == true) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has ended!"))
+                        return@playerExecutor
+                    }
+                    if (currentEvent?.hasStarted == true) {
+                        player.sendMessage(ChatColor.translateAlternateColorCodes('&', "&cThat event has already started!"))
+                        return@playerExecutor
+                    }
+                    (currentEvent as? SumoEvent)?.join(player)
+                    (currentEvent as? TntRunEvent)?.join(player)
+                    player.inventory.clear()
+                    player.inventory.setItemInOffHand(ItemStack(Material.AIR))
                 }
             }
         }
+
+        commandAPICommand("pay") {
+            aliases = arrayOf("paycoins", "donatecoins")
+            playerArgument("player")
+            longArgument("amount")
+            playerExecutor { executor, args ->
+                val player = args.get("player") as Player
+                val receiver = UserManager.getUser(player.uniqueId)
+                val sender = UserManager.getUser(executor.uniqueId)
+                val amount = args.get("amount") as Long
+                if (amount < 1) {
+                    executor.sendMessage(ChatColor.RED.toString() + "Amount must be greater than 0!")
+                    return@playerExecutor
+                }
+                if (sender.coins < amount) {
+                    executor.sendMessage(ChatColor.RED.toString() + "You don't have enough coins!")
+                    return@playerExecutor
+                }
+                sender.coins -= amount
+                receiver.coins += amount
+                player.sendMessage(miniMessage().deserialize("<green>You have received <white>${NumberFormat.getNumberInstance().format(amount)} coins</white> from <white>${executor.name}</white>!"))
+                executor.sendMessage(miniMessage().deserialize("<green>You have sent <white>${NumberFormat.getNumberInstance().format(amount)} coins</white> to <white>${player.name}</white>!"))
+            }
+        }
+
 
         commandAPICommand("bc") {
             aliases = arrayOf("broadcast")
@@ -425,6 +486,7 @@ class Pressed : JavaPlugin() {
     }
 
     fun startTasks() {
-        GameLoop().runTaskTimer(this, 5L, 5L)
+        this.gameLoop = GameLoop()
+        gameLoop.runTaskTimer(this, 5L, 5L)
     }
 }

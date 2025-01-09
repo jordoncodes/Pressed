@@ -16,7 +16,7 @@ object UserManager {
         var user = userMap[uniqueId]
         if (user == null) {
             user = User(Bukkit.getOfflinePlayer(uniqueId))
-            userMap.put(uniqueId, user)
+            userMap[uniqueId] = user
         }
         return user
     }
