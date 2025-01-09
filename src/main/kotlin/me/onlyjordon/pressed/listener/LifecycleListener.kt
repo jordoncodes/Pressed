@@ -153,6 +153,9 @@ class LifecycleListener: Listener {
         UserManager.clear(user)
         event.quitMessage = ChatColor.translateAlternateColorCodes('&', "&5[&c-&5] &d${player.name} left the game")
         map.put(player.uniqueId, 0L)
+        if (plugin.kothArea.currentOwner?.uniqueId == player.uniqueId) {
+            plugin.kothArea.currentOwner = null
+        }
     }
 
 

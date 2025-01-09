@@ -63,7 +63,7 @@ class BoardManager: Listener {
         var statusMessage = "&aSafe"
         if (isInArena(board.player.location)) statusMessage = "&fArena"
         if (u.killer.second > System.currentTimeMillis()) {
-            statusMessage = "&cIn Combat: ${TimeUnit.MILLISECONDS.toSeconds(u.killer.second - System.currentTimeMillis())} seconds"
+            statusMessage = "&cIn Combat: ${TimeUnit.MILLISECONDS.toSeconds(u.killer.second - System.currentTimeMillis())}s"
         }
         val list = mutableListOf(color("&d&m----------------------"),
             color("&5Players&f: &d" + Bukkit.getServer().onlinePlayers.size),

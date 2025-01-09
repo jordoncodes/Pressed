@@ -1,7 +1,8 @@
 package me.onlyjordon.pressed
 
 import com.github.retrooper.packetevents.PacketEvents
-import com.github.retrooper.packetevents.event.PacketListenerPriority
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.regions.CuboidRegion
 import dev.jorel.commandapi.CommandAPI
 import dev.jorel.commandapi.CommandAPIBukkitConfig
 import dev.jorel.commandapi.CommandPermission
@@ -19,10 +20,10 @@ import me.onlyjordon.pressed.events.Event
 import me.onlyjordon.pressed.events.sumo.SumoEvent
 import me.onlyjordon.pressed.globalboosters.BoosterDataManager
 import me.onlyjordon.pressed.globalboosters.BoosterManager
+import me.onlyjordon.pressed.koth.KothArea
 import me.onlyjordon.pressed.listener.BlockListener
 import me.onlyjordon.pressed.listener.KitEditorListener
 import me.onlyjordon.pressed.listener.LifecycleListener
-import me.onlyjordon.pressed.nick.NickListener
 import me.onlyjordon.pressed.quests.BlocksPlacedQuest
 import me.onlyjordon.pressed.quests.KillsQuest
 import me.onlyjordon.pressed.quests.KillstreakQuest
@@ -53,6 +54,7 @@ import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.plugin.java.JavaPlugin
+import org.bukkit.scheduler.BukkitRunnable
 import java.io.File
 
 
@@ -99,6 +101,7 @@ class Pressed : JavaPlugin() {
         private set
     lateinit var boosterDataManager: BoosterDataManager
         private set
+    lateinit var kothArea: KothArea
     var currentGlobalBooster = 1.0
 
     var shopItemStick: StickType = CosmeticType.getRandomItemWithProbabilities(StickType::class.java)
@@ -161,6 +164,15 @@ class Pressed : JavaPlugin() {
         boosterDataManager.loadBoosters(boosterManager.activeBoosters)
         boosterManager.startBoosterCleanupTask()
         boosterManager.applyActiveBoosters()
+
+        val region = CuboidRegion(BlockVector3.at(32, 21, -8), BlockVector3.at(40,28,0))
+        kothArea = KothArea(region)
+        kothArea.isActive = true
+        object : BukkitRunnable() {
+            override fun run() {
+                kothArea.tick()
+            }
+        }.runTaskTimer(this, 20L, 20L)
     }
 
     override fun onDisable() {

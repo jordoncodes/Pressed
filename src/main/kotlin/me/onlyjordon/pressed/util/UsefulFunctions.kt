@@ -1,5 +1,13 @@
 package me.onlyjordon.pressed.util
 
+import com.sk89q.worldedit.EditSessionBuilder
+import com.sk89q.worldedit.WorldEdit
+import com.sk89q.worldedit.bukkit.BukkitAdapter
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardFormats
+import com.sk89q.worldedit.extent.clipboard.io.ClipboardReader
+import com.sk89q.worldedit.function.operation.Operations
+import com.sk89q.worldedit.math.BlockVector3
+import com.sk89q.worldedit.session.ClipboardHolder
 import me.onlyjordon.pressed.Pressed
 import net.md_5.bungee.api.ChatColor
 import org.bukkit.Bukkit
@@ -66,6 +74,40 @@ object UsefulFunctions {
                 }
             }
         } catch (e: IOException) {
+        }
+    }
+
+    fun pasteSchematic(location: Location, schematicName: String) {
+        try {
+            val file = File(plugin.dataFolder, "$schematicName.schem")
+            if (!file.exists()) {
+                Bukkit.getLogger().warning("Schematic file $schematicName.schem not found in the plugin folder!")
+                return
+            }
+
+            val format = ClipboardFormats.findByFile(file)
+            if (format == null) {
+                Bukkit.getLogger().warning("Unsupported schematic format!")
+                return
+            }
+
+            format.getReader(file.inputStream()).use { reader: ClipboardReader ->
+                val clipboard = reader.read()
+
+                val weWorld: com.sk89q.worldedit.world.World = BukkitAdapter.adapt(location.world)
+
+                val editSession = WorldEdit.getInstance().newEditSession(weWorld)
+
+                val op = ClipboardHolder(clipboard).createPaste(editSession)
+                    .to(BlockVector3.at(location.blockX, location.blockY, location.blockZ))
+                    .ignoreAirBlocks(true)
+                    .build()
+                Operations.complete(op)
+            }
+
+            Bukkit.getLogger().info("Schematic $schematicName.schem has been successfully pasted at (${location.blockX}, ${location.blockY}, ${location.blockZ}).")
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
     }
 }
